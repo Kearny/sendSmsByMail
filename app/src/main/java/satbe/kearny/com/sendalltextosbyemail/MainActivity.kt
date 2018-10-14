@@ -1,15 +1,22 @@
 package satbe.kearny.com.sendalltextosbyemail
 
+import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.text.Html
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import com.google.gson.Gson
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
+import java.io.IOException
+import java.io.OutputStreamWriter
+import java.text.SimpleDateFormat
 import java.util.*
 
 
@@ -136,14 +143,48 @@ open class MainActivity : AppCompatActivity() {
                     smsList.reverse()
                 }
 
-                result.forEach {
-                    val smsList = it.value
+                // Save to JSON
+                val gson = Gson()
+                writeToFile(gson.toJson(result), this@MainActivity)
 
-                    smsList.forEach {
-                        val dateFromSms = Date(it.time)
+                val smsLoic = result[Contacts.LOIC_GAUVAIN]
+
+                if (smsLoic != null) {
+                    var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
+                    smsLoic.forEach { sms ->
+                        mailBody += "<tr>"
+                        val dateFromSms = Date(sms.time)
+                        val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
+
+                        mailBody += if (sms.folderName == "inbox") {
+                            "<td align='left'>"
+                        } else {
+                            "<td align='right'>"
+                        }
+
+                        mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
+                        mailBody += "${sms.msg}</span></td></tr>"
                     }
+
+                    mailBody += "</table></html>"
+
+                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:alexandre.liscia@gmail.com"))
+                    intent.putExtra(Intent.EXTRA_SUBJECT, "Les sms de ${Contacts.LOIC_GAUVAIN.name}")
+                    intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(mailBody))
+                    startActivity(Intent.createChooser(intent, "Envoi du mail..."))
                 }
             }
+        }
+
+        private fun writeToFile(data: String, context: Context) {
+            try {
+                val outputStreamWriter = OutputStreamWriter(context.openFileOutput("sms.json", Context.MODE_PRIVATE))
+                outputStreamWriter.write(data)
+                outputStreamWriter.close()
+            } catch (e: IOException) {
+                Log.e("Exception", "File write failed: " + e.toString())
+            }
+
         }
     }
 }
