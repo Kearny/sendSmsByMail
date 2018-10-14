@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Envoyer les textos par email</string>
+    <string name="action_settings">Settings</string>
+    <string name="email_address">Adresse email</string>
+</resources>
