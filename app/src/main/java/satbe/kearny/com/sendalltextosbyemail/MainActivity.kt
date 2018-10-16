@@ -1,12 +1,10 @@
 package satbe.kearny.com.sendalltextosbyemail
 
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.AsyncTask
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
-import android.text.Html
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
@@ -143,15 +141,12 @@ open class MainActivity : AppCompatActivity() {
                     smsList.reverse()
                 }
 
-                // Save to JSON
-                val gson = Gson()
-                writeToFile(gson.toJson(result), this@MainActivity)
+                result.forEach {
+                    val contactName = it.key.name
+                    val smsContact = it.value
 
-                val smsLoic = result[Contacts.LOIC_GAUVAIN]
-
-                if (smsLoic != null) {
                     var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
-                    smsLoic.forEach { sms ->
+                    smsContact.forEach { sms ->
                         mailBody += "<tr>"
                         val dateFromSms = Date(sms.time)
                         val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
@@ -163,16 +158,17 @@ open class MainActivity : AppCompatActivity() {
                         }
 
                         mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
-                        mailBody += "${sms.msg}</span></td></tr>"
+                        mailBody += "${sms.msg}</span></td></hr>"
                     }
 
                     mailBody += "</table></html>"
 
-                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:alexandre.liscia@gmail.com"))
-                    intent.putExtra(Intent.EXTRA_SUBJECT, "Les sms de ${Contacts.LOIC_GAUVAIN.name}")
-                    intent.putExtra(Intent.EXTRA_TEXT, Html.fromHtml(mailBody))
-                    startActivity(Intent.createChooser(intent, "Envoi du mail..."))
+                    MailAsyncTask().execute(contactName, mailBody)
                 }
+
+                // Save to JSON
+                val gson = Gson()
+                writeToFile(gson.toJson(result), this@MainActivity)
             }
         }
 
