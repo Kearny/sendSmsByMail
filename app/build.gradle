@@ -35,4 +35,5 @@ dependencies {
     implementation files('libs/activation.jar')
     implementation files('libs/additionnal.jar')
     implementation files('libs/mail.jar')
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.0.0"
 }

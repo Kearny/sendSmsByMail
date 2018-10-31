@@ -3,7 +3,7 @@ package satbe.kearny.com.sendalltextosbyemail
 import android.os.AsyncTask
 import android.util.Log
 
-class MailAsyncTask() : AsyncTask<String, Int, Boolean>() {
+class MailAsyncTask : AsyncTask<String, Int, Boolean>() {
     override fun doInBackground(vararg params: String): Boolean {
         var success = false
 
