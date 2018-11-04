@@ -13,9 +13,9 @@ import android.view.MenuItem
 import android.view.View
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.IOException
 import java.io.OutputStreamWriter
 import java.util.*
@@ -32,52 +32,49 @@ open class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         sendMailButton.setOnClickListener {
-            progressBar.visibility = View.VISIBLE
-            progressBar.progress = 0
+            GlobalScope.launch(Dispatchers.Main) {
+                progressBar.visibility = View.VISIBLE
 
-            // https://kotlinlang.org/docs/reference/coroutines/basics.html#scope-builder
-            runBlocking {
-                coroutineScope {
-                    launch { getSmsMap(contactsAndSmsMap) }
-                }
+                getSmsMap()
 
+                progressBar.progress = 0
                 progressBar.visibility = View.GONE
             }
 
-//
-//            contactsAndSmsMap.forEach { contactEntry ->
-//                val smsList = contactEntry.value
-//                smsList.sortedWith(compareBy(Sms::time))
-//                smsList.reverse()
-//            }
-//
-//            contactsAndSmsMap.forEach { contact ->
-//                val contactName = contact.key.name
-//
-//                var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
-//                contact.value.forEach { sms ->
-//                    mailBody += "<tr>"
-//                    val dateFromSms = Date(sms.time)
-//                    val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
-//
-//                    mailBody += if (sms.folderName == "inbox") {
-//                        "<td align='left'>"
-//                    } else {
-//                        "<td align='right'>"
-//                    }
-//
-//                    mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
-//                    mailBody += "${sms.msg}</span></td></hr>"
-//                }
-//
-//                mailBody += "</table></html>"
-//
-//                MailAsyncTask().execute(contactName, mailBody)
-//            }
-//
-//            // Save to JSON
-//            val gson = Gson()
-//            writeToFile(gson.toJson(contactsAndSmsMap), this@MainActivity)
+/*
+            contactsAndSmsMap.forEach { contactEntry ->
+                val smsList = contactEntry.value
+                smsList.sortedWith(compareBy(Sms::time))
+                smsList.reverse()
+            }
+
+            contactsAndSmsMap.forEach { contact ->
+                val contactName = contact.key.name
+
+                var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
+                contact.value.forEach { sms ->
+                    mailBody += "<tr>"
+                    val dateFromSms = Date(sms.time)
+                    val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
+
+                    mailBody += if (sms.folderName == "inbox") {
+                        "<td align='left'>"
+                    } else {
+                        "<td align='right'>"
+                    }
+
+                    mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
+                    mailBody += "${sms.msg}</span></td></hr>"
+                }
+
+                mailBody += "</table></html>"
+
+                MailAsyncTask().execute(contactName, mailBody)
+            }
+
+            // Save to JSON
+            val gson = Gson()
+            writeToFile(gson.toJson(contactsAndSmsMap), this@MainActivity)*/
         }
     }
 
@@ -91,7 +88,7 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getSmsMap(contactsAndSmsMap: EnumMap<Contacts, MutableList<Sms>>) {
+    private fun getSmsMap() {
         if (ContextCompat.checkSelfPermission(
                 baseContext,
                 "android.permission.READ_SMS"
@@ -103,14 +100,20 @@ open class MainActivity : AppCompatActivity() {
                 REQUEST_CODE_ASK_PERMISSIONS
             )
         }
+
         val message = Uri.parse("content://sms/")
 
-        val cursor = contentResolver.query(message, null, null, null, null)
-        if (null != cursor) {
-            if (cursor.moveToFirst()) {
+        val smsCursor = contentResolver.query(
+            message,
+            null,
+            null,
+            null,
+            null
+        )
 
+        smsCursor.use { cursor ->
+            if (null != cursor) {
                 progressBar.max = cursor.count
-
                 do {
                     val contactEnum: Contacts? =
                         getContactFromPhoneNumber(cursor.getString(cursor.getColumnIndexOrThrow("address")))
@@ -144,8 +147,6 @@ open class MainActivity : AppCompatActivity() {
                     progressBar.progress++
                 } while (cursor.moveToNext())
             }
-
-            cursor.close()
         }
     }
 
