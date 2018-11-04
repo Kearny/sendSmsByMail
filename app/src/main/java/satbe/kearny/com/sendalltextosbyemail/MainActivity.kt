@@ -28,16 +28,16 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
         sendMailButton.setOnClickListener {
-            GlobalScope.launch(Dispatchers.Main) {
-                progressBar.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
 
+            GlobalScope.launch(Dispatchers.Main) {
                 getSmsMap()
 
-                progressBar.progress = 0
                 progressBar.visibility = View.GONE
             }
 
@@ -112,8 +112,9 @@ open class MainActivity : AppCompatActivity() {
         )
 
         smsCursor.use { cursor ->
-            if (null != cursor) {
-                progressBar.max = cursor.count
+            if (null != cursor && cursor.moveToFirst()) {
+                Log.d(TAG, "There are ${cursor.count} sms on this phone.")
+
                 do {
                     val contactEnum: Contacts? =
                         getContactFromPhoneNumber(cursor.getString(cursor.getColumnIndexOrThrow("address")))
@@ -143,8 +144,6 @@ open class MainActivity : AppCompatActivity() {
                             )}"
                         )
                     }
-
-                    progressBar.progress++
                 } while (cursor.moveToNext())
             }
         }
