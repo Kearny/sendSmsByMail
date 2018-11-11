@@ -4,6 +4,7 @@ enum class Contacts(val phoneNumbers: Array<String>) {
     ALBERT(arrayOf("692231886")),
     ALEXANDRE_LISCIA(arrayOf("783062443","769004605", "648968549", "662101715")),
     ALINE(arrayOf("692200651")),
+    ANGELIQUE_MICARD(arrayOf("611195836")),
     CHRISTINE(arrayOf("617456526")),
     DAMIEN_SEILER(arrayOf("662856302")),
     ERIC_BAZIN(arrayOf("617912153")),

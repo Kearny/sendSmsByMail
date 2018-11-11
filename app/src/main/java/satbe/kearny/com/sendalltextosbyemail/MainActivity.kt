@@ -18,6 +18,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.io.OutputStreamWriter
+import java.text.SimpleDateFormat
 import java.util.*
 
 open class MainActivity : AppCompatActivity() {
@@ -38,42 +39,44 @@ open class MainActivity : AppCompatActivity() {
             GlobalScope.launch(Dispatchers.Main) {
                 getSmsMap()
 
+                contactsAndSmsMap.forEach { contactEntry ->
+                    val smsList = contactEntry.value
+                    smsList.sortedWith(compareBy(Sms::time))
+                    smsList.reverse()
+                }
+
+                contactsAndSmsMap.forEach { contact ->
+                    val contactName = contact.key.name
+
+                    var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
+                    contact.value.forEach { sms ->
+                        mailBody += "<tr>"
+                        val dateFromSms = Date(sms.time)
+                        val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
+
+                        mailBody += if (sms.folderName == "inbox") {
+                            "<td align='left'>"
+                        } else {
+                            "<td align='right'>"
+                        }
+
+                        mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
+                        mailBody += "${sms.msg}</span></td></hr>"
+                    }
+
+                    mailBody += "</table></html>"
+
+                    GlobalScope.launch {
+                        MailSender().sendMail(contactName, mailBody)
+                    }
+                }
+
                 progressBar.visibility = View.GONE
             }
 
-/*
-            contactsAndSmsMap.forEach { contactEntry ->
-                val smsList = contactEntry.value
-                smsList.sortedWith(compareBy(Sms::time))
-                smsList.reverse()
-            }
-
-            contactsAndSmsMap.forEach { contact ->
-                val contactName = contact.key.name
-
-                var mailBody = "<html><table cellpadding=\"0\" cellspacing=\"0\" width=\"100%\">"
-                contact.value.forEach { sms ->
-                    mailBody += "<tr>"
-                    val dateFromSms = Date(sms.time)
-                    val formatter = SimpleDateFormat("dd/MM/yyyy hh:mm", Locale.FRANCE)
-
-                    mailBody += if (sms.folderName == "inbox") {
-                        "<td align='left'>"
-                    } else {
-                        "<td align='right'>"
-                    }
-
-                    mailBody += "<small>${formatter.format(dateFromSms)}</small><br/>"
-                    mailBody += "${sms.msg}</span></td></hr>"
-                }
-
-                mailBody += "</table></html>"
-
-                MailAsyncTask().execute(contactName, mailBody)
-            }
 
             // Save to JSON
-            val gson = Gson()
+            /*val gson = Gson()
             writeToFile(gson.toJson(contactsAndSmsMap), this@MainActivity)*/
         }
     }
@@ -136,13 +139,6 @@ open class MainActivity : AppCompatActivity() {
                         )
 
                         addSmsToSmsMap(contactEnum, sms, contactsAndSmsMap)
-                    } else {
-                        Log.d(
-                            TAG,
-                            "${cursor.getString(cursor.getColumnIndexOrThrow("address"))} ${cursor.getString(
-                                cursor.getColumnIndexOrThrow("body")
-                            )}"
-                        )
                     }
                 } while (cursor.moveToNext())
             }
@@ -184,6 +180,6 @@ open class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        const val TAG = "MainActivity"
+        const val TAG = "KEARNY - MainActivity"
     }
 }
